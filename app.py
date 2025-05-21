@@ -2,7 +2,7 @@ from flask import Flask, request, abort
 from linebot import LineBotApi, WebhookHandler
 from linebot.exceptions import InvalidSignatureError
 from linebot.models import MessageEvent, TextMessage, TextSendMessage
-import openai
+from openai import OpenAI
 import os
 
 # 讀取 LINE 與 OpenAI 的金鑰（請設在 Render 的環境變數）
@@ -34,15 +34,17 @@ def webhook():
 def handle_message(event):
     user_msg = event.message.text
 
+    client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
+
     try:
-        response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {"role": "system", "content": "你是一個友善、用繁體中文回答問題的 LINE 機器人。"},
-                {"role": "user", "content": user_msg}
-            ]
-        )
-        ai_reply = response.choices[0].message["content"].strip()
+        response = client.chat.completions.create(
+    model="gpt-3.5-turbo",
+    messages=[
+        {"role": "system", "content": "你是一個友善的 LINE 機器人"},
+        {"role": "user", "content": user_msg}
+    ]
+)
+ai_reply = response.choices[0].message.content.strip()
     except Exception as e:
         ai_reply = f"AI 回覆時出錯：{str(e)}"
 
